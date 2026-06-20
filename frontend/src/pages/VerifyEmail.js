@@ -19,7 +19,7 @@ function VerifyEmail() {
 
     const verify = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/auth/verify-email/${token}`);
+        const res = await axios.get(`https://event-management-system-c0bz.onrender.com/api/auth/verify-email/${token}`);
         setStatus('success');
         setMessage(res.data.message);
       } catch (err) {
