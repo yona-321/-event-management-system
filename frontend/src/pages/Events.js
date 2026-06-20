@@ -30,7 +30,7 @@ function Events() {
 
   const fetchEvents = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/events');
+      const res = await axios.get('https://event-management-system-c0bz.onrender.com/api/events');
       setEvents(res.data);
     } catch (err) {
       setMessage('Failed to load events');
@@ -57,7 +57,7 @@ function Events() {
     e.preventDefault();
     try {
       await axios.post(
-        `http://localhost:5000/api/registrations/${selectedEvent._id}`,
+        `https://event-management-system-c0bz.onrender.com/api/registrations/${selectedEvent._id}`,
         { name, department, year, whatsapp, subEvent },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -135,7 +135,7 @@ function Events() {
     <div className="ev-card">
       <div className="ev-card-banner" style={{ background: getBannerColor(index), position:'relative' }}>
         {event.image ? (
-          <img src={`http://localhost:5000${event.image}`} alt={event.title} style={{width:'100%', height:'100%', objectFit:'cover', position:'absolute', top:0, left:0}} />
+          <img src={`https://event-management-system-c0bz.onrender.com${event.image}`} alt={event.title} style={{width:'100%', height:'100%', objectFit:'cover', position:'absolute', top:0, left:0}} />
         ) : (
           <div className="ev-card-emoji">{getCategoryIcon(event.title)}</div>
         )}

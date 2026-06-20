@@ -32,7 +32,7 @@ function Dashboard() {
 
   const fetchEvents = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/events');
+      const res = await axios.get('https://event-management-system-c0bz.onrender.com/api/events');
       setEvents(res.data);
     } catch (err) {
       setMessage('Failed to load events');
@@ -42,7 +42,7 @@ function Dashboard() {
   const fetchRegistrations = async (eventId) => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/registrations/event/${eventId}`,
+        `https://event-management-system-c0bz.onrender.com/api/registrations/event/${eventId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setEventRegistrations(prev => ({ ...prev, [eventId]: res.data }));
@@ -88,7 +88,7 @@ function Dashboard() {
     setCapacity(event.capacity);
     setCategory(event.category || 'Technical');
     setSubEvents(event.subEvents || []);
-    setImagePreview(event.image ? `http://localhost:5000${event.image}` : '');
+    setImagePreview(event.image ? `https://event-management-system-c0bz.onrender.com${event.image}` : '');
     setImage(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setMessage('✏️ Editing event — make your changes and click Update Event.');
@@ -117,7 +117,7 @@ function Dashboard() {
       if (image) formData.append('image', image);
 
       if (editMode) {
-        await axios.put(`http://localhost:5000/api/events/${editingEventId}`, formData, {
+        await axios.put(`https://event-management-system-c0bz.onrender.com/api/events/${editingEventId}`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -127,7 +127,7 @@ function Dashboard() {
         setEditMode(false);
         setEditingEventId(null);
       } else {
-        await axios.post('http://localhost:5000/api/events', formData, {
+        await axios.post('https://event-management-system-c0bz.onrender.com/api/events', formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -148,7 +148,7 @@ function Dashboard() {
   const handleDelete = async (eventId) => {
     if (!window.confirm('Are you sure you want to delete this event?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/events/${eventId}`,
+      await axios.delete(`https://event-management-system-c0bz.onrender.com/api/events/${eventId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage('🗑️ Event deleted successfully!');
