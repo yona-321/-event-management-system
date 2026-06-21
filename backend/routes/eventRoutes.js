@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
-const path = require('path');
+
 
 // Middleware to verify token
 const auth = (req, res, next) => {
@@ -20,15 +20,7 @@ const auth = (req, res, next) => {
   }
 };
 
-// Multer setup for image upload (Cloudinary)
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'event-posters',
-    allowed_formats: ['jpg', 'png', 'jpeg'],
-  },
-});
-const upload = multer({ storage });
+
 
 // Get all events
 router.get('/', async (req, res) => {
@@ -47,7 +39,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
     const { title, description, date, location, capacity, category, subEvents } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : '';
+   const image = req.file ? req.file.path : '';
     const event = new Event({
       title, description, date, location, capacity,
       category: category || 'Technical',
@@ -66,7 +58,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
 router.put('/:id', auth, upload.single('image'), async (req, res) => {
   try {
     const updates = { ...req.body };
-    if (req.file) updates.image = `/uploads/${req.file.filename}`;
+    if (req.file) updates.image = req.file.path;
     if (updates.subEvents) updates.subEvents = JSON.parse(updates.subEvents);
     const event = await Event.findByIdAndUpdate(req.params.id, updates, { new: true });
     res.json({ message: 'Event updated successfully', event });
