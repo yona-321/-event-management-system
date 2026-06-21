@@ -3,7 +3,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
-require('./reminderJob');
 
 const app = express();
 
@@ -24,7 +23,11 @@ app.get('/', (req, res) => {
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected successfully'))
+  .then(() => {
+    console.log('MongoDB connected successfully');
+    // Start reminder job after MongoDB connects
+    require('./reminderJob');
+  })
   .catch((err) => console.error('MongoDB connection error:', err.message));
 
 const PORT = process.env.PORT || 5000;
