@@ -97,7 +97,7 @@ router.post('/:eventId', auth, async (req, res) => {
       return res.status(400).json({ message: 'Event is full' });
     }
 
-    const { name, department, year, whatsapp, subEvent } = req.body;
+   
 
 const existing = await Registration.findOne({
   student: req.user.userId,
