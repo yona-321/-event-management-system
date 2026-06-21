@@ -3,6 +3,8 @@ const router = express.Router();
 const Event = require('../models/Event');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 const path = require('path');
 
 // Middleware to verify token
@@ -18,10 +20,13 @@ const auth = (req, res, next) => {
   }
 };
 
-// Multer setup for image upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+// Multer setup for image upload (Cloudinary)
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'event-posters',
+    allowed_formats: ['jpg', 'png', 'jpeg'],
+  },
 });
 const upload = multer({ storage });
 
