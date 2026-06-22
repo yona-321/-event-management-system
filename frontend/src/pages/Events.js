@@ -53,6 +53,14 @@ function Events() {
     setSelectedEvent(null);
   };
 
+  // Builds a safe image URL whether `image` is a full Cloudinary URL
+  // (new uploads) or an old relative /uploads/... path (legacy events)
+  const getImageUrl = (image) => {
+    if (!image) return '';
+    if (image.startsWith('http')) return image;
+    return `https://event-management-system-c0bz.onrender.com${image}`;
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
@@ -135,7 +143,7 @@ function Events() {
     <div className="ev-card">
       <div className="ev-card-banner" style={{ background: getBannerColor(index), position:'relative' }}>
         {event.image ? (
-          <img src={`https://event-management-system-c0bz.onrender.com${event.image}`} alt={event.title} style={{width:'100%', height:'100%', objectFit:'cover', position:'absolute', top:0, left:0}} />
+         <img src={getImageUrl(event.image)} alt={event.title} style={{width:'100%', height:'100%', objectFit:'cover', position:'absolute', top:0, left:0}} />
         ) : (
           <div className="ev-card-emoji">{getCategoryIcon(event.title)}</div>
         )}
@@ -237,8 +245,8 @@ function Events() {
               <div className="cal-header">
                 <span className="cal-month">{monthNames[currentMonth]} {currentYear}</span>
                 <div className="cal-nav-btns">
-                  <button onClick={prevMonth}>◀ Prev</button>
-                  <button onClick={nextMonth}>Next ▶</button>
+                  <button onClick={prevMonth}>◀️ Prev</button>
+                  <button onClick={nextMonth}>Next ▶️</button>
                 </div>
               </div>
               <div className="cal-grid">
@@ -311,11 +319,8 @@ function Events() {
               </div>
             <div className="popup-header">
               <h2>📝 Event Registration</h2>
-                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                 <p>Fill in your details to register for this event</p>
-                  <button onClick={closePopup} style={{background:'rgba(255,255,255,0.3)', border:'2px solid white', color:'white', borderRadius:'50%', width:'30px', height:'30px', fontSize:'16px', fontWeight:'700', cursor:'pointer', flexShrink:'0', marginLeft:'10px'}}>✕</button>
-                 </div>
-               </div>
+              <p>Fill in your details to register for this event</p>
+            </div>
             <div className="popup-event-banner">
               <p className="popup-event-name">{selectedEvent?.title}</p>
               <p className="popup-event-meta">📅 {selectedEvent ? new Date(selectedEvent.date).toDateString() : ''} &nbsp; 📍 {selectedEvent?.location}</p>
