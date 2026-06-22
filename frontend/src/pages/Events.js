@@ -14,6 +14,7 @@ function Events() {
   const [year, setYear] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [subEvent, setSubEvent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState(null);
@@ -63,17 +64,21 @@ function Events() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setMessage('⏳ Submitting... the server may take up to a minute to wake up.');
     try {
       await axios.post(
         `https://event-management-system-c0bz.onrender.com/api/registrations/${selectedEvent._id}`,
         { name, department, year, whatsapp, subEvent },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` }, timeout: 60000 }
       );
       setMessage('✅ Registered successfully! Check your email for confirmation.');
       closePopup();
       fetchEvents();
     } catch (err) {
-      setMessage(err.response?.data?.message || 'Registration failed');
+      setMessage(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -314,8 +319,8 @@ function Events() {
       {showPopup && (
        <div className="popup-overlay" onClick={(e) => { if(e.target.className === 'popup-overlay') closePopup(); }}>
          <div className="popup-box">
-           <div style={{textAlign:'right', padding:'10px 14px 0', background:'#1a73e8'}}>
-             <button onClick={closePopup} style={{background:'white', color:'#1a73e8', border:'none', borderRadius:'50%', width:'30px', height:'30px', fontSize:'16px', fontWeight:'700', cursor:'pointer'}}>✕</button>
+           <div style={{position:'sticky', top:0, zIndex:10, textAlign:'right', padding:'10px 14px', background:'#1a73e8'}}>
+             <button onClick={closePopup} style={{background:'white', color:'#1a73e8', border:'none', borderRadius:'50%', width:'34px', height:'34px', fontSize:'18px', fontWeight:'700', cursor:'pointer'}}>✕</button>
               </div>
             <div className="popup-header">
               <h2>📝 Event Registration</h2>
@@ -373,7 +378,9 @@ function Events() {
                 <label>WhatsApp Number <span className="required">*</span></label>
                 <input type="tel" placeholder="Your answer" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required />
               </div>
-              <button type="submit" className="popup-submit-btn">✅ Submit Registration</button>
+              <button type="submit" className="popup-submit-btn" disabled={isSubmitting}>
+                {isSubmitting ? '⏳ Submitting...' : '✅ Submit Registration'}
+              </button>
             </form>
           </div>
         </div>
@@ -382,4 +389,4 @@ function Events() {
   );
 }
 
-export default Events;
+export default Events;s

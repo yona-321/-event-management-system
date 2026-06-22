@@ -79,7 +79,7 @@ const sendConfirmationEmail = async (studentEmail, studentName, department, year
           </div>
         </div>
         <div style="background:#1a73e8;padding:15px;text-align:center;">
-          <p style="color:white;margin:0;font-size:13px;">Event Management System © 2026</p>
+          <p style="color:white;margin:0;font-size:13px;">Event Management System ©️ 2026</p>
         </div>
       </div>
     `
@@ -97,13 +97,11 @@ router.post('/:eventId', auth, async (req, res) => {
       return res.status(400).json({ message: 'Event is full' });
     }
 
-   
-
-const existing = await Registration.findOne({
-  student: req.user.userId,
-  event: req.params.eventId,
-  subEvent: subEvent
-});
+    const existing = await Registration.findOne({
+      student: req.user.userId,
+      event: req.params.eventId,
+      subEvent: subEvent
+    });
     if (existing) {
       return res.status(400).json({ message: 'Already registered for this event' });
     }
@@ -118,14 +116,25 @@ const existing = await Registration.findOne({
     event.registeredCount += 1;
     await event.save();
 
-    const student = await User.findById(req.user.userId);
-    await sendConfirmationEmail(
-      student.email, name, department, year, whatsapp,
-      subEvent, event.title, event.date, event.location
-    );
+    // Registration is saved at this point regardless of what happens below.
+    // Email failures are logged and reported separately so the student
+    // still gets a success response instead of a false "Server error".
+    try {
+      const student = await User.findById(req.user.userId);
+      await sendConfirmationEmail(
+        student.email, name, department, year, whatsapp,
+        subEvent, event.title, event.date, event.location
+      );
+    } catch (emailError) {
+      console.error('❌ Confirmation email failed:', emailError.message);
+      return res.status(201).json({
+        message: 'Registered successfully! (Confirmation email could not be sent — please check your registration in the app.)'
+      });
+    }
 
     res.status(201).json({ message: 'Registered successfully! Check your email.' });
   } catch (error) {
+    console.error('❌ Registration error:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -136,6 +145,7 @@ router.get('/event/:eventId', auth, async (req, res) => {
     const registrations = await Registration.find({ event: req.params.eventId });
     res.json(registrations);
   } catch (error) {
+    console.error('❌ Fetch registrations error:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -147,6 +157,7 @@ router.get('/my', auth, async (req, res) => {
       .populate('event', 'title date location');
     res.json(registrations);
   } catch (error) {
+    console.error('❌ Fetch my registrations error:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
