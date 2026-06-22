@@ -4,18 +4,6 @@ const Registration = require('../models/Registration');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-
-// Gmail transporter using App Password
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
 
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -83,12 +71,24 @@ const sendConfirmationEmail = async (studentEmail, studentName, department, year
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `"Event Management System" <${process.env.EMAIL_USER}>`,
-    to: studentEmail,
-    subject: `✅ Registration Confirmed – ${eventTitle}`,
-    html: htmlContent
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: 'Event Management System <onboarding@resend.dev>',
+      to: studentEmail,
+      subject: `✅ Registration Confirmed – ${eventTitle}`,
+      html: htmlContent
+    })
   });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.message);
+  }
 };
 
 // Register for an event
