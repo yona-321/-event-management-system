@@ -4,9 +4,9 @@ const Registration = require('../models/Registration');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const brevo = require('@getbrevo/brevo');
-const brevoClient = new brevo.TransactionalEmailsApi();
-brevoClient.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+const { BrevoClient } = require('@getbrevo/brevo');
+
+const brevoClient = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
 
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -74,13 +74,12 @@ const sendConfirmationEmail = async (studentEmail, studentName, department, year
       </div>
     `;
 
-  const email = new brevo.SendSmtpEmail();
-  email.subject = `✅ Registration Confirmed – ${eventTitle}`;
-  email.htmlContent = htmlContent;
-  email.sender = { name: 'Event Management System', email: process.env.BREVO_FROM_EMAIL };
-  email.to = [{ email: studentEmail, name: studentName }];
-
-  await brevoClient.sendTransacEmail(email);
+  await brevoClient.transactionalEmails.sendTransacEmail({
+    subject: `✅ Registration Confirmed – ${eventTitle}`,
+    htmlContent,
+    sender: { name: 'Event Management System', email: process.env.BREVO_FROM_EMAIL },
+    to: [{ email: studentEmail, name: studentName }]
+  });
 };
 
 // Register for an event
@@ -113,9 +112,6 @@ router.post('/:eventId', auth, async (req, res) => {
     event.registeredCount += 1;
     await event.save();
 
-    // Registration is saved at this point regardless of what happens below.
-    // Email failures are logged and reported separately so the student
-    // still gets a success response instead of a false "Server error".
     try {
       const student = await User.findById(req.user.userId);
       await sendConfirmationEmail(
@@ -136,7 +132,7 @@ router.post('/:eventId', auth, async (req, res) => {
   }
 });
 
-// Get registrations for a specific event grouped by sub-event
+// Get registrations for a specific event
 router.get('/event/:eventId', auth, async (req, res) => {
   try {
     const registrations = await Registration.find({ event: req.params.eventId });
