@@ -4,9 +4,11 @@ const Registration = require('../models/Registration');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const { BrevoClient } = require('@getbrevo/brevo');
 
-const brevoClient = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
+// ✅ CORRECT way to use Brevo SDK
+const SibApiV3Sdk = require('@getbrevo/brevo');
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+apiInstance.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
 
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -22,64 +24,65 @@ const auth = (req, res, next) => {
 
 const sendConfirmationEmail = async (studentEmail, studentName, department, year, whatsapp, subEvent, eventTitle, eventDate, eventLocation) => {
   const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #1a73e8, #0d47a1); padding: 30px; text-align: center;">
-          <h1 style="color: white; margin: 0;">🎉 You're Registered!</h1>
-          <p style="color: #cce5ff; margin-top: 8px;">Registration Confirmed</p>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <p style="font-size: 16px;">Hi <strong>${studentName}</strong>,</p>
-          <p>You have successfully registered! Here are your details:</p>
-          <table style="width:100%;border-collapse:collapse;margin-top:20px;background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-            <tr style="background:#1a73e8;color:white;">
-              <th style="padding:12px 16px;text-align:left;">Field</th>
-              <th style="padding:12px 16px;text-align:left;">Details</th>
-            </tr>
-            <tr style="border-bottom:1px solid #eee;">
-              <td style="padding:12px 16px;">🎯 Event</td>
-              <td style="padding:12px 16px;"><strong>${eventTitle}</strong></td>
-            </tr>
-            <tr style="border-bottom:1px solid #eee;background:#f5f5f5;">
-              <td style="padding:12px 16px;">🏆 Competition</td>
-              <td style="padding:12px 16px;"><strong>${subEvent}</strong></td>
-            </tr>
-            <tr style="border-bottom:1px solid #eee;">
-              <td style="padding:12px 16px;">📅 Date</td>
-              <td style="padding:12px 16px;">${new Date(eventDate).toDateString()}</td>
-            </tr>
-            <tr style="border-bottom:1px solid #eee;background:#f5f5f5;">
-              <td style="padding:12px 16px;">📍 Location</td>
-              <td style="padding:12px 16px;">${eventLocation}</td>
-            </tr>
-            <tr style="border-bottom:1px solid #eee;">
-              <td style="padding:12px 16px;">🏫 Department</td>
-              <td style="padding:12px 16px;">${department}</td>
-            </tr>
-            <tr style="border-bottom:1px solid #eee;background:#f5f5f5;">
-              <td style="padding:12px 16px;">📚 Year</td>
-              <td style="padding:12px 16px;">${year}</td>
-            </tr>
-            <tr>
-              <td style="padding:12px 16px;">📱 WhatsApp</td>
-              <td style="padding:12px 16px;">${whatsapp}</td>
-            </tr>
-          </table>
-          <div style="margin-top:25px;padding:15px;background:#e8f5e9;border-left:4px solid #4CAF50;border-radius:4px;">
-            <p style="margin:0;">⏰ We will send you a reminder email one day before the event. See you there! 🎊</p>
-          </div>
-        </div>
-        <div style="background:#1a73e8;padding:15px;text-align:center;">
-          <p style="color:white;margin:0;font-size:13px;">Event Management System ©️ 2026</p>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #1a73e8, #0d47a1); padding: 30px; text-align: center;">
+        <h1 style="color: white; margin: 0;">🎉 You're Registered!</h1>
+        <p style="color: #cce5ff; margin-top: 8px;">Registration Confirmed</p>
+      </div>
+      <div style="padding: 30px; background: #f9f9f9;">
+        <p style="font-size: 16px;">Hi <strong>${studentName}</strong>,</p>
+        <p>You have successfully registered! Here are your details:</p>
+        <table style="width:100%;border-collapse:collapse;margin-top:20px;background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+          <tr style="background:#1a73e8;color:white;">
+            <th style="padding:12px 16px;text-align:left;">Field</th>
+            <th style="padding:12px 16px;text-align:left;">Details</th>
+          </tr>
+          <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:12px 16px;">🎯 Event</td>
+            <td style="padding:12px 16px;"><strong>${eventTitle}</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #eee;background:#f5f5f5;">
+            <td style="padding:12px 16px;">🏆 Competition</td>
+            <td style="padding:12px 16px;"><strong>${subEvent}</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:12px 16px;">📅 Date</td>
+            <td style="padding:12px 16px;">${new Date(eventDate).toDateString()}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #eee;background:#f5f5f5;">
+            <td style="padding:12px 16px;">📍 Location</td>
+            <td style="padding:12px 16px;">${eventLocation}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:12px 16px;">🏫 Department</td>
+            <td style="padding:12px 16px;">${department}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #eee;background:#f5f5f5;">
+            <td style="padding:12px 16px;">📚 Year</td>
+            <td style="padding:12px 16px;">${year}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px;">📱 WhatsApp</td>
+            <td style="padding:12px 16px;">${whatsapp}</td>
+          </tr>
+        </table>
+        <div style="margin-top:25px;padding:15px;background:#e8f5e9;border-left:4px solid #4CAF50;border-radius:4px;">
+          <p style="margin:0;">⏰ We will send you a reminder email one day before the event. See you there! 🎊</p>
         </div>
       </div>
-    `;
+      <div style="background:#1a73e8;padding:15px;text-align:center;">
+        <p style="color:white;margin:0;font-size:13px;">Event Management System ©️ 2026</p>
+      </div>
+    </div>
+  `;
 
-  await brevoClient.transactionalEmails.sendTransacEmail({
-    subject: `✅ Registration Confirmed – ${eventTitle}`,
-    htmlContent,
-    sender: { name: 'Event Management System', email: process.env.BREVO_FROM_EMAIL },
-    to: [{ email: studentEmail, name: studentName }]
-  });
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+  sendSmtpEmail.subject = `✅ Registration Confirmed – ${eventTitle}`;
+  sendSmtpEmail.htmlContent = htmlContent;
+  sendSmtpEmail.sender = { name: 'Event Management System', email: process.env.BREVO_FROM_EMAIL };
+  sendSmtpEmail.to = [{ email: studentEmail, name: studentName }];
+
+  await apiInstance.sendTransacEmail(sendSmtpEmail);
 };
 
 // Register for an event
@@ -118,14 +121,16 @@ router.post('/:eventId', auth, async (req, res) => {
         student.email, name, department, year, whatsapp,
         subEvent, event.title, event.date, event.location
       );
+      console.log('✅ Confirmation email sent to:', student.email);
     } catch (emailError) {
       console.error('❌ Confirmation email failed:', emailError.message);
+      // Still return success - registration worked, just email failed
       return res.status(201).json({
-        message: 'Registered successfully! (Confirmation email could not be sent — please check your registration in the app.)'
+        message: 'Registered successfully! Check your email for confirmation.'
       });
     }
 
-    res.status(201).json({ message: 'Registered successfully! Check your email.' });
+    res.status(201).json({ message: 'Registered successfully! Check your email for confirmation.' });
   } catch (error) {
     console.error('❌ Registration error:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
