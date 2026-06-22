@@ -20,17 +20,15 @@ const auth = (req, res, next) => {
   }
 };
 
-
-
-// Get all events
-router.get('/', async (req, res) => {
-  try {
-    const events = await Event.find().populate('organizer', 'name email');
-    res.json(events);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
+// Multer setup for image upload (Cloudinary)
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'event-posters',
+    allowed_formats: ['jpg', 'png', 'jpeg'],
+  },
 });
+const upload = multer({ storage });
 
 // Create event
 router.post('/', auth, upload.single('image'), async (req, res) => {
