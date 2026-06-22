@@ -4,7 +4,8 @@ const Registration = require('../models/Registration');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -19,21 +20,8 @@ const auth = (req, res, next) => {
 };
 
 const sendConfirmationEmail = async (studentEmail, studentName, department, year, whatsapp, subEvent, eventTitle, eventDate, eventLocation) => {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    },
-    connectionTimeout: 20000,
-    greetingTimeout: 20000,
-    socketTimeout: 20000
-  });
-
-  await transporter.sendMail({
-    from: `"Event Management System" <${process.env.EMAIL_USER}>`,
+  await resend.emails.send({
+    from: 'Event Management System <onboarding@resend.dev>',
     to: studentEmail,
     subject: `✅ Registration Confirmed – ${eventTitle}`,
     html: `
