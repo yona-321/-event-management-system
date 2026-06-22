@@ -4,11 +4,16 @@ const Registration = require('../models/Registration');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 
-// ✅ CORRECT way to use Brevo SDK
-const SibApiV3Sdk = require('@getbrevo/brevo');
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-apiInstance.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
+// Gmail transporter using App Password
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS   // 16-digit App Password (not your Gmail password)
+  }
+});
 
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -76,13 +81,12 @@ const sendConfirmationEmail = async (studentEmail, studentName, department, year
     </div>
   `;
 
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-  sendSmtpEmail.subject = `✅ Registration Confirmed – ${eventTitle}`;
-  sendSmtpEmail.htmlContent = htmlContent;
-  sendSmtpEmail.sender = { name: 'Event Management System', email: process.env.BREVO_FROM_EMAIL };
-  sendSmtpEmail.to = [{ email: studentEmail, name: studentName }];
-
-  await apiInstance.sendTransacEmail(sendSmtpEmail);
+  await transporter.sendMail({
+    from: `"Event Management System" <${process.env.EMAIL_USER}>`,
+    to: studentEmail,
+    subject: `✅ Registration Confirmed – ${eventTitle}`,
+    html: htmlContent
+  });
 };
 
 // Register for an event
@@ -123,11 +127,7 @@ router.post('/:eventId', auth, async (req, res) => {
       );
       console.log('✅ Confirmation email sent to:', student.email);
     } catch (emailError) {
-      console.error('❌ Confirmation email failed:', emailError.message);
-      // Still return success - registration worked, just email failed
-      return res.status(201).json({
-        message: 'Registered successfully! Check your email for confirmation.'
-      });
+      console.error('❌ Email failed:', emailError.message);
     }
 
     res.status(201).json({ message: 'Registered successfully! Check your email for confirmation.' });
@@ -143,7 +143,6 @@ router.get('/event/:eventId', auth, async (req, res) => {
     const registrations = await Registration.find({ event: req.params.eventId });
     res.json(registrations);
   } catch (error) {
-    console.error('❌ Fetch registrations error:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -155,7 +154,6 @@ router.get('/my', auth, async (req, res) => {
       .populate('event', 'title date location');
     res.json(registrations);
   } catch (error) {
-    console.error('❌ Fetch my registrations error:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
