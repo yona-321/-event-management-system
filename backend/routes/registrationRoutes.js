@@ -71,6 +71,10 @@ const sendConfirmationEmail = async (studentEmail, studentName, department, year
     </div>
   `;
 
+  // NOTE: Resend free tier only allows sending to the account owner's
+  // verified email address until a sending domain is verified at
+  // resend.com/domains. For this project, registration confirmations
+  // will only be delivered when studentEmail matches the verified address.
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -87,7 +91,7 @@ const sendConfirmationEmail = async (studentEmail, studentName, department, year
 
   if (!response.ok) {
     const err = await response.json();
-    throw new Error(err.message);
+    throw new Error(err.message || 'Failed to send confirmation email');
   }
 };
 
@@ -95,6 +99,12 @@ const sendConfirmationEmail = async (studentEmail, studentName, department, year
 router.post('/:eventId', auth, async (req, res) => {
   try {
     const { name, department, year, whatsapp, subEvent } = req.body;
+
+    // Basic input validation
+    if (!name || !department || !year || !whatsapp) {
+      return res.status(400).json({ message: 'Name, department, year, and WhatsApp number are required' });
+    }
+
     const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
@@ -114,15 +124,24 @@ router.post('/:eventId', auth, async (req, res) => {
     const registration = new Registration({
       student: req.user.userId,
       event: req.params.eventId,
-      name, department, year, whatsapp, subEvent
+      name: name.trim(),
+      department: department.trim(),
+      year,
+      whatsapp: whatsapp.trim(),
+      subEvent
     });
     await registration.save();
 
     event.registeredCount += 1;
     await event.save();
 
+    // Email sending is wrapped separately so a failed email
+    // never blocks a successful registration
     try {
       const student = await User.findById(req.user.userId);
+      if (!student || !student.email) {
+        throw new Error('Student record or email not found');
+      }
       await sendConfirmationEmail(
         student.email, name, department, year, whatsapp,
         subEvent, event.title, event.date, event.location
