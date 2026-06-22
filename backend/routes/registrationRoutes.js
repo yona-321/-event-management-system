@@ -4,8 +4,9 @@ const Registration = require('../models/Registration');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY);
+const brevo = require('@getbrevo/brevo');
+const brevoClient = new brevo.TransactionalEmailsApi();
+brevoClient.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -20,11 +21,7 @@ const auth = (req, res, next) => {
 };
 
 const sendConfirmationEmail = async (studentEmail, studentName, department, year, whatsapp, subEvent, eventTitle, eventDate, eventLocation) => {
-  await resend.emails.send({
-    from: 'Event Management System <onboarding@resend.dev>',
-    to: studentEmail,
-    subject: `✅ Registration Confirmed – ${eventTitle}`,
-    html: `
+  const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
         <div style="background: linear-gradient(135deg, #1a73e8, #0d47a1); padding: 30px; text-align: center;">
           <h1 style="color: white; margin: 0;">🎉 You're Registered!</h1>
@@ -75,8 +72,15 @@ const sendConfirmationEmail = async (studentEmail, studentName, department, year
           <p style="color:white;margin:0;font-size:13px;">Event Management System ©️ 2026</p>
         </div>
       </div>
-    `
-  });
+    `;
+
+  const email = new brevo.SendSmtpEmail();
+  email.subject = `✅ Registration Confirmed – ${eventTitle}`;
+  email.htmlContent = htmlContent;
+  email.sender = { name: 'Event Management System', email: process.env.BREVO_FROM_EMAIL };
+  email.to = [{ email: studentEmail, name: studentName }];
+
+  await brevoClient.sendTransacEmail(email);
 };
 
 // Register for an event
