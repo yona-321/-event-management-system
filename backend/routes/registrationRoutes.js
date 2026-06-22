@@ -20,11 +20,16 @@ const auth = (req, res, next) => {
 
 const sendConfirmationEmail = async (studentEmail, studentName, department, year, whatsapp, subEvent, eventTitle, eventDate, eventLocation) => {
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
-    }
+    },
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 20000
   });
 
   await transporter.sendMail({
