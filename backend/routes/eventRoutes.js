@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const Event = require('../models/Event');
+const User = require('../models/User');
+const sendEmail = require('../utils/sendEmail');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
 
-
-// Middleware to verify token
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ message: 'No token provided' });
@@ -20,7 +20,6 @@ const auth = (req, res, next) => {
   }
 };
 
-// Multer setup for image upload (Cloudinary)
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
@@ -29,7 +28,7 @@ const storage = new CloudinaryStorage({
   },
 });
 const upload = multer({ storage });
-// Get all events
+
 router.get('/', async (req, res) => {
   try {
     const events = await Event.find().populate('organizer', 'name email');
@@ -39,14 +38,13 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Create event
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
     if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }
     const { title, description, date, location, capacity, category, subEvents } = req.body;
-   const image = req.file ? req.file.path : '';
+    const image = req.file ? req.file.path : '';
     const event = new Event({
       title, description, date, location, capacity,
       category: category || 'Technical',
@@ -55,13 +53,46 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       organizer: req.user.userId
     });
     await event.save();
+
+    // Notify all registered users
+    try {
+      const users = await User.find({}, 'email name');
+      for (const user of users) {
+        await sendEmail(
+          user.email,
+          `New Event: ${title}`,
+          `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
+            <h2 style="background:#1a73e8;color:white;padding:20px;border-radius:8px 8px 0 0;margin:0;">
+              New Event Posted!
+            </h2>
+            <div style="padding:24px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;">
+              <p>Hi ${user.name},</p>
+              <h3 style="color:#1a73e8;">${title}</h3>
+              <p>${description}</p>
+              <p><strong>Date:</strong> ${new Date(date).toDateString()}</p>
+              <p><strong>Location:</strong> ${location}</p>
+              <p><strong>Capacity:</strong> ${capacity} seats</p>
+              <a href="https://event-managemen-system.vercel.app/events"
+                style="background:#1a73e8;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;margin-top:12px;">
+                View & Register
+              </a>
+            </div>
+          </div>
+          `
+        );
+      }
+      console.log(`Notification sent to ${users.length} users`);
+    } catch (emailErr) {
+      console.error('Notification email error:', emailErr.message);
+    }
+
     res.status(201).json({ message: 'Event created successfully', event });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Update event
 router.put('/:id', auth, upload.single('image'), async (req, res) => {
   try {
     const updates = { ...req.body };
@@ -74,7 +105,6 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
   }
 });
 
-// Delete event
 router.delete('/:id', auth, async (req, res) => {
   try {
     await Event.findByIdAndDelete(req.params.id);
