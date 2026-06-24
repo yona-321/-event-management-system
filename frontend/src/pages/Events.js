@@ -162,7 +162,7 @@ function Events() {
         <h3 className="ev-card-title">{event.title}</h3>
         <p className="ev-card-desc">{event.description}</p>
         <div className="ev-card-meta">
-          <span>📅 {new Date(event.date).toDateString()}</span>
+         <span>📅 {new Date(event.date).toDateString()}{event.time ? ` ⏰ ${formatTime(event.time)}` : ''}</span>
           <span>📍 {event.location}</span>
         </div>
         <div className="ev-cap-wrap">
@@ -185,6 +185,14 @@ function Events() {
       </div>
     </div>
   );
+  const formatTime = (t) => {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const display = hour % 12 === 0 ? 12 : hour % 12;
+  return `${display}:${m} ${ampm}`;
+};
 
   return (
     <div className="ev-page">

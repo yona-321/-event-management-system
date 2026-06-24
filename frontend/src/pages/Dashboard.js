@@ -7,6 +7,7 @@ function Dashboard() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
   const [location, setLocation] = useState('');
   const [capacity, setCapacity] = useState('');
   const [category, setCategory] = useState('Technical');
@@ -84,11 +85,12 @@ function Dashboard() {
     setTitle(event.title);
     setDescription(event.description);
     setDate(event.date ? event.date.split('T')[0] : '');
+    setTime(event.time || '');
     setLocation(event.location);
     setCapacity(event.capacity);
     setCategory(event.category || 'Technical');
     setSubEvents(event.subEvents || []);
-    setImagePreview(event.image ? `https://event-management-system-c0bz.onrender.com${event.image}` : '');
+    setImagePreview(event.image || '');
     setImage(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setMessage('✏️ Editing event — make your changes and click Update Event.');
@@ -97,7 +99,7 @@ function Dashboard() {
   const handleCancelEdit = () => {
     setEditMode(false);
     setEditingEventId(null);
-    setTitle(''); setDescription(''); setDate('');
+    setTitle(''); setDescription(''); setDate(''); setTime('');
     setLocation(''); setCapacity(''); setSubEvents([]);
     setImage(null); setImagePreview('');
     setMessage('');
@@ -110,6 +112,7 @@ function Dashboard() {
       formData.append('title', title);
       formData.append('description', description);
       formData.append('date', date);
+      formData.append('time', time);
       formData.append('location', location);
       formData.append('capacity', capacity);
       formData.append('category', category);
@@ -118,25 +121,19 @@ function Dashboard() {
 
       if (editMode) {
         await axios.put(`https://event-management-system-c0bz.onrender.com/api/events/${editingEventId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
         });
         setMessage('✅ Event updated successfully!');
         setEditMode(false);
         setEditingEventId(null);
       } else {
         await axios.post('https://event-management-system-c0bz.onrender.com/api/events', formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
         });
         setMessage('✅ Event created successfully!');
       }
 
-      setTitle(''); setDescription(''); setDate('');
+      setTitle(''); setDescription(''); setDate(''); setTime('');
       setLocation(''); setCapacity(''); setSubEvents([]);
       setImage(null); setImagePreview('');
       fetchEvents();
@@ -169,6 +166,15 @@ function Dashboard() {
     if (cat === 'Sports') return '⚽';
     if (cat === 'Cultural') return '🎵';
     return '🎯';
+  };
+
+  const formatTime = (t) => {
+    if (!t) return '';
+    const [h, m] = t.split(':');
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const display = hour % 12 === 0 ? 12 : hour % 12;
+    return `${display}:${m} ${ampm}`;
   };
 
   return (
@@ -221,10 +227,14 @@ function Dashboard() {
               <textarea placeholder="Describe your event..." value={description} onChange={e => setDescription(e.target.value)} required />
             </div>
 
-            <div className="dash-row2">
+            <div className="dash-row3">
               <div className="dash-field">
                 <label>DATE</label>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} required />
+              </div>
+              <div className="dash-field">
+                <label>TIME</label>
+                <input type="time" value={time} onChange={e => setTime(e.target.value)} required />
               </div>
               <div className="dash-field">
                 <label>CAPACITY</label>
@@ -277,7 +287,7 @@ function Dashboard() {
               <div className="dash-ev-header" onClick={() => handleToggleEvent(event._id)}>
                 <div className="dash-ev-left">
                   <h4>{getCategoryIcon(event.category)} {event.title}</h4>
-                  <p>📅 {new Date(event.date).toDateString()} &nbsp; 📍 {event.location} &nbsp; 👥 {event.registeredCount}/{event.capacity}</p>
+                  <p>📅 {new Date(event.date).toDateString()} {event.time ? `⏰ ${formatTime(event.time)}` : ''} &nbsp; 📍 {event.location} &nbsp; 👥 {event.registeredCount}/{event.capacity}</p>
                   {event.subEvents && event.subEvents.length > 0 && (
                     <div className="dash-sub-tags-view">
                       {event.subEvents.map((se, i) => (

@@ -11,6 +11,11 @@
 
 /* Content */
 .dash-content { display: grid; grid-template-columns: 1fr 1.4fr; gap: 22px; padding: 26px 30px; }
+.dash-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+@media (max-width: 600px) {
+  .dash-row3 { grid-template-columns: 1fr; }
+}
 
 /* Cards */
 .dash-form-card { background: white; border-radius: 14px; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
