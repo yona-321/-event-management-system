@@ -80,14 +80,14 @@ function Dashboard() {
     setSubEvents(subEvents.filter((_, i) => i !== index));
   };
 
-  const formatTime = (t) => {
-    if (!t) return '';
-    const [h, m] = t.split(':');
-    const hour = parseInt(h);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const display = hour % 12 === 0 ? 12 : hour % 12;
-    return `${display}:${m} ${ampm}`;
-  };
+ const formatTime = (t) => {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${display}:${m} ${ampm}`;
+};
 
   const handleEdit = (event) => {
     setEditMode(true);
