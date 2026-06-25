@@ -7,7 +7,8 @@ function Dashboard() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [location, setLocation] = useState('');
   const [capacity, setCapacity] = useState('');
   const [category, setCategory] = useState('Technical');
@@ -79,13 +80,23 @@ function Dashboard() {
     setSubEvents(subEvents.filter((_, i) => i !== index));
   };
 
+  const formatTime = (t) => {
+    if (!t) return '';
+    const [h, m] = t.split(':');
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const display = hour % 12 === 0 ? 12 : hour % 12;
+    return `${display}:${m} ${ampm}`;
+  };
+
   const handleEdit = (event) => {
     setEditMode(true);
     setEditingEventId(event._id);
     setTitle(event.title);
     setDescription(event.description);
     setDate(event.date ? event.date.split('T')[0] : '');
-    setTime(event.time || '');
+    setStartTime(event.startTime || '');
+    setEndTime(event.endTime || '');
     setLocation(event.location);
     setCapacity(event.capacity);
     setCategory(event.category || 'Technical');
@@ -99,7 +110,8 @@ function Dashboard() {
   const handleCancelEdit = () => {
     setEditMode(false);
     setEditingEventId(null);
-    setTitle(''); setDescription(''); setDate(''); setTime('');
+    setTitle(''); setDescription(''); setDate('');
+    setStartTime(''); setEndTime('');
     setLocation(''); setCapacity(''); setSubEvents([]);
     setImage(null); setImagePreview('');
     setMessage('');
@@ -112,7 +124,8 @@ function Dashboard() {
       formData.append('title', title);
       formData.append('description', description);
       formData.append('date', date);
-      formData.append('time', time);
+      formData.append('startTime', startTime);
+      formData.append('endTime', endTime);
       formData.append('location', location);
       formData.append('capacity', capacity);
       formData.append('category', category);
@@ -133,7 +146,8 @@ function Dashboard() {
         setMessage('✅ Event created successfully!');
       }
 
-      setTitle(''); setDescription(''); setDate(''); setTime('');
+      setTitle(''); setDescription(''); setDate('');
+      setStartTime(''); setEndTime('');
       setLocation(''); setCapacity(''); setSubEvents([]);
       setImage(null); setImagePreview('');
       fetchEvents();
@@ -168,15 +182,6 @@ function Dashboard() {
     return '🎯';
   };
 
-  const formatTime = (t) => {
-    if (!t) return '';
-    const [h, m] = t.split(':');
-    const hour = parseInt(h);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const display = hour % 12 === 0 ? 12 : hour % 12;
-    return `${display}:${m} ${ampm}`;
-  };
-
   return (
     <div className="dash-page">
       <div className="dash-nav">
@@ -189,7 +194,6 @@ function Dashboard() {
       </div>
 
       <div className="dash-content">
-        {/* LEFT - Create/Edit Event */}
         <div className="dash-form-card">
           <h3 className="dash-card-title">{editMode ? '✏️ Edit Event' : '➕ Create New Event'}</h3>
           {message && <div className="dash-message">{message}</div>}
@@ -227,18 +231,25 @@ function Dashboard() {
               <textarea placeholder="Describe your event..." value={description} onChange={e => setDescription(e.target.value)} required />
             </div>
 
-            <div className="dash-row3">
+            <div className="dash-row2">
               <div className="dash-field">
                 <label>DATE</label>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} required />
               </div>
               <div className="dash-field">
-                <label>TIME</label>
-                <input type="time" value={time} onChange={e => setTime(e.target.value)} required />
-              </div>
-              <div className="dash-field">
                 <label>CAPACITY</label>
                 <input type="number" placeholder="e.g. 200" value={capacity} onChange={e => setCapacity(e.target.value)} required />
+              </div>
+            </div>
+
+            <div className="dash-row2">
+              <div className="dash-field">
+                <label>START TIME</label>
+                <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} required />
+              </div>
+              <div className="dash-field">
+                <label>END TIME</label>
+                <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} required />
               </div>
             </div>
 
@@ -287,7 +298,11 @@ function Dashboard() {
               <div className="dash-ev-header" onClick={() => handleToggleEvent(event._id)}>
                 <div className="dash-ev-left">
                   <h4>{getCategoryIcon(event.category)} {event.title}</h4>
-                  <p>📅 {new Date(event.date).toDateString()} {event.time ? `⏰ ${formatTime(event.time)}` : ''} &nbsp; 📍 {event.location} &nbsp; 👥 {event.registeredCount}/{event.capacity}</p>
+                  <p>
+                    📅 {new Date(event.date).toDateString()}
+                    {event.startTime ? ` ⏰ ${formatTime(event.startTime)}${event.endTime ? ` - ${formatTime(event.endTime)}` : ''}` : ''}
+                    &nbsp; 📍 {event.location} &nbsp; 👥 {event.registeredCount}/{event.capacity}
+                  </p>
                   {event.subEvents && event.subEvents.length > 0 && (
                     <div className="dash-sub-tags-view">
                       {event.subEvents.map((se, i) => (

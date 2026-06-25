@@ -185,7 +185,8 @@ function Events() {
       </div>
     </div>
   );
-  const formatTime = (t) => {
+
+const formatTime = (t) => {
   if (!t) return '';
   const [h, m] = t.split(':');
   const hour = parseInt(h);
