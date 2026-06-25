@@ -98,7 +98,7 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     const updates = { ...req.body };
     if (req.file) updates.image = req.file.path;
     if (updates.subEvents) updates.subEvents = JSON.parse(updates.subEvents);
-    const event = await Event.findByIdAndUpdate(req.params.id, updates, { new: true });
+    const event = await Event.findByIdAndUpdate(req.params.id, updates, { returnDocument: 'after' });
     res.json({ message: 'Event updated successfully', event });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
