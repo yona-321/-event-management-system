@@ -80,14 +80,54 @@ function Dashboard() {
     setSubEvents(subEvents.filter((_, i) => i !== index));
   };
 
- const formatTime = (t) => {
-  if (!t) return '';
-  const [h, m] = t.split(':');
-  const hour = parseInt(h);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${display}:${m} ${ampm}`;
-};
+  const formatTime = (t) => {
+    if (!t) return '';
+    const [h, m] = t.split(':');
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${display}:${m} ${ampm}`;
+  };
+
+  // --- 12-hour time picker helpers ---
+  const timeToParts = (t) => {
+    if (!t) return { hour: '12', minute: '00', ampm: 'AM' };
+    const [h, m] = t.split(':');
+    let hour = parseInt(h);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 || 12;
+    return { hour: String(hour).padStart(2, '0'), minute: m, ampm };
+  };
+
+  const partsToTime = (hour, minute, ampm) => {
+    let h = parseInt(hour);
+    if (ampm === 'AM' && h === 12) h = 0;
+    if (ampm === 'PM' && h !== 12) h += 12;
+    return `${String(h).padStart(2, '0')}:${minute}`;
+  };
+
+  const renderTimePicker = (value, setValue) => {
+    const { hour, minute, ampm } = timeToParts(value);
+    return (
+      <div className="time-picker-12hr">
+        <select value={hour} onChange={e => setValue(partsToTime(e.target.value, minute, ampm))}>
+          {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+            <option key={h} value={String(h).padStart(2, '0')}>{h}</option>
+          ))}
+        </select>
+        <select value={minute} onChange={e => setValue(partsToTime(hour, e.target.value, ampm))}>
+          {Array.from({ length: 60 }, (_, i) => i).map(m => (
+            <option key={m} value={String(m).padStart(2, '0')}>{String(m).padStart(2, '0')}</option>
+          ))}
+        </select>
+        <select value={ampm} onChange={e => setValue(partsToTime(hour, minute, e.target.value))}>
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
+    );
+  };
+  // --- end time picker helpers ---
 
   const handleEdit = (event) => {
     setEditMode(true);
@@ -245,11 +285,11 @@ function Dashboard() {
             <div className="dash-row2">
               <div className="dash-field">
                 <label>START TIME</label>
-                <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} required />
+                {renderTimePicker(startTime, setStartTime)}
               </div>
               <div className="dash-field">
                 <label>END TIME</label>
-                <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} required />
+                {renderTimePicker(endTime, setEndTime)}
               </div>
             </div>
 
