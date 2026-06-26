@@ -19,8 +19,6 @@ function Login() {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('role', res.data.role);
       localStorage.setItem('name', res.data.name);
-
-      // Redirect based on role
       if (res.data.role === 'admin' || res.data.role === 'organizer') {
         navigate('/dashboard');
       } else {
@@ -32,55 +30,50 @@ function Login() {
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-brand">
-        <h1>Event Management System</h1>
-        <p>Discover, register, and manage college events — hackathons, workshops, fests, and more — all in one place.</p>
-      </div>
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-logo">
+          <span className="login-logo-icon">🎓</span>
+          <h1 className="login-title">Event Management System</h1>
+          <p className="login-subtitle">Welcome back! Log in to continue.</p>
+        </div>
 
-      <div className="auth-form-side">
-        <div className="auth-card">
-          <h2>Welcome back</h2>
-          <p className="auth-subtitle">Log in to continue</p>
+        {error && <div className="login-error">{error}</div>}
 
-          {error && <div className="auth-error">{error}</div>}
+        <form onSubmit={handleLogin}>
+          <div className="login-field">
+            <label>Email address</label>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-          <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label>Email</label>
+          <div className="login-field">
+            <label>Password</label>
+            <div className="login-pw-wrap">
               <input
-                type="email"
-                placeholder="you@college.edu"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                className="login-show-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
             </div>
+          </div>
 
-            <div className="form-group">
-              <label>Password</label>
-              <div className="password-wrapper">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? 'Hide' : 'Show'}
-                </button>
-              </div>
-            </div>
-
-            <button className="auth-button" type="submit">Login</button>
-          </form>
-          {/* Register link removed — accounts are managed by admin */}
-        </div>
+          <button type="submit" className="login-btn">Login</button>
+        </form>
       </div>
     </div>
   );
