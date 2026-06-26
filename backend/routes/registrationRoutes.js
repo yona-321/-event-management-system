@@ -174,15 +174,23 @@ router.get('/event/:eventId/export-csv', auth, adminOnly, async (req, res) => {
 
     const registrations = await Registration.find({ event: req.params.eventId });
 
+    // Column widths via padding — pad each field to fixed width for readability
+    const pad = (str, len) => String(str).padEnd(len, ' ');
+
     const rows = [
+      // Header row
       ['Name', 'Department', 'Year', 'WhatsApp', 'Sub-Event', 'Registered At'],
       ...registrations.map(r => [
         r.name,
         r.department,
         r.year,
-        r.whatsapp,
+        // Prefix with tab character so Excel treats as text, not scientific notation
+        '\t' + r.whatsapp,
         r.subEvent || '-',
-        new Date(r.createdAt).toLocaleString()
+        new Date(r.createdAt).toLocaleString('en-IN', {
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', hour12: true
+        })
       ])
     ];
 
