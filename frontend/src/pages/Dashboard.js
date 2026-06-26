@@ -372,6 +372,7 @@ function Dashboard() {
                     {event.category}
                   </span>
                   <button className="dash-edit-btn" onClick={e => { e.stopPropagation(); handleEdit(event); }}>✏️ Edit</button>
+                  <button className="dash-view-btn" onClick={() => navigate('/analytics')}>📊 Analytics</button>
                   <button className="dash-del-btn" onClick={e => { e.stopPropagation(); handleDelete(event._id); }}>🗑️ Delete</button>
                   {/* CSV Export button */}
                   <button
