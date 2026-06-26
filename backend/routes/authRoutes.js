@@ -6,13 +6,21 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 
+const ADMIN_EMAILS = ['yonaah.321@gmail.com', 'kroja.0489@gmail.com'];
+const COLLEGE_DOMAIN = '@kongunaducollege.ac.in';
+
 // Register
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Only allow college email addresses
-    if (!email.endsWith('@kongunaducollege.ac.in')) {
+    // Determine role based on email
+    let role;
+    if (ADMIN_EMAILS.includes(email)) {
+      role = 'admin';
+    } else if (email.endsWith(COLLEGE_DOMAIN)) {
+      role = 'student';
+    } else {
       return res.status(400).json({ message: 'Registration is only allowed for Kongu Nadu College students. Please use your college email.' });
     }
 
@@ -23,7 +31,7 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new User({ name, email, password: hashedPassword, role: 'student' });
+    const user = new User({ name, email, password: hashedPassword, role });
     await user.save();
 
     res.status(201).json({ message: 'Registration successful! You can now log in.' });
