@@ -9,7 +9,12 @@ const sendEmail = require('../utils/sendEmail');
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
+
+    // Only allow college email addresses
+    if (!email.endsWith('@kongunaducollege.ac.in')) {
+      return res.status(400).json({ message: 'Registration is only allowed for Kongu Nadu College students. Please use your college email.' });
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -18,7 +23,7 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new User({ name, email, password: hashedPassword, role });
+    const user = new User({ name, email, password: hashedPassword, role: 'student' });
     await user.save();
 
     res.status(201).json({ message: 'Registration successful! You can now log in.' });
@@ -26,7 +31,7 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
- 
+
 
 // Verify Email
 router.get('/verify-email/:token', async (req, res) => {
@@ -68,7 +73,6 @@ router.post('/login', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-   
 
     res.json({ token, role: user.role, name: user.name });
   } catch (error) {

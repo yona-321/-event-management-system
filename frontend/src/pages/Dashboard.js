@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 
+const API = 'https://event-management-system-c0bz.onrender.com';
+
 function Dashboard() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -34,7 +36,7 @@ function Dashboard() {
 
   const fetchEvents = async () => {
     try {
-      const res = await axios.get('https://event-management-system-c0bz.onrender.com/api/events');
+      const res = await axios.get(`${API}/api/events`);
       setEvents(res.data);
     } catch (err) {
       setMessage('Failed to load events');
@@ -43,8 +45,7 @@ function Dashboard() {
 
   const fetchRegistrations = async (eventId) => {
     try {
-      const res = await axios.get(
-        `https://event-management-system-c0bz.onrender.com/api/registrations/event/${eventId}`,
+      const res = await axios.get(`${API}/api/registrations/event/${eventId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setEventRegistrations(prev => ({ ...prev, [eventId]: res.data }));
@@ -58,9 +59,7 @@ function Dashboard() {
       setExpandedEvent(null);
     } else {
       setExpandedEvent(eventId);
-      if (!eventRegistrations[eventId]) {
-        fetchRegistrations(eventId);
-      }
+      if (!eventRegistrations[eventId]) fetchRegistrations(eventId);
     }
   };
 
@@ -89,7 +88,6 @@ function Dashboard() {
     return `${display}:${m} ${ampm}`;
   };
 
-  // --- 12-hour time picker helpers ---
   const timeToParts = (t) => {
     if (!t) return { hour: '12', minute: '00', ampm: 'AM' };
     const [h, m] = t.split(':');
@@ -127,7 +125,6 @@ function Dashboard() {
       </div>
     );
   };
-  // --- end time picker helpers ---
 
   const handleEdit = (event) => {
     setEditMode(true);
@@ -173,14 +170,14 @@ function Dashboard() {
       if (image) formData.append('image', image);
 
       if (editMode) {
-        await axios.put(`https://event-management-system-c0bz.onrender.com/api/events/${editingEventId}`, formData, {
+        await axios.put(`${API}/api/events/${editingEventId}`, formData, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
         });
         setMessage('✅ Event updated successfully!');
         setEditMode(false);
         setEditingEventId(null);
       } else {
-        await axios.post('https://event-management-system-c0bz.onrender.com/api/events', formData, {
+        await axios.post(`${API}/api/events`, formData, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
         });
         setMessage('✅ Event created successfully!');
@@ -199,13 +196,32 @@ function Dashboard() {
   const handleDelete = async (eventId) => {
     if (!window.confirm('Are you sure you want to delete this event?')) return;
     try {
-      await axios.delete(`https://event-management-system-c0bz.onrender.com/api/events/${eventId}`,
+      await axios.delete(`${API}/api/events/${eventId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage('🗑️ Event deleted successfully!');
       fetchEvents();
     } catch (err) {
       setMessage('Failed to delete event');
+    }
+  };
+
+  // CSV Export — triggers browser download directly
+  const handleExportCSV = async (eventId, eventTitle) => {
+    try {
+      const res = await fetch(`${API}/api/registrations/event/${eventId}/export-csv`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${eventTitle.replace(/[^a-z0-9]/gi, '_')}_attendees.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setMessage('❌ Failed to export CSV. Try again.');
     }
   };
 
@@ -357,6 +373,14 @@ function Dashboard() {
                   </span>
                   <button className="dash-edit-btn" onClick={e => { e.stopPropagation(); handleEdit(event); }}>✏️ Edit</button>
                   <button className="dash-del-btn" onClick={e => { e.stopPropagation(); handleDelete(event._id); }}>🗑️ Delete</button>
+                  {/* CSV Export button */}
+                  <button
+                    className="dash-export-btn"
+                    onClick={e => { e.stopPropagation(); handleExportCSV(event._id, event.title); }}
+                    title="Export attendees as CSV"
+                  >
+                    📥 Export
+                  </button>
                   <span className="dash-arrow">{expandedEvent === event._id ? '▲' : '▼'}</span>
                 </div>
               </div>

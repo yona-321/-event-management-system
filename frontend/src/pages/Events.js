@@ -314,8 +314,14 @@ const formatTime = (t) => {
                       </span>
                     </div>
                     {!past && role === 'student' && (
-                      <button className="cal-reg-btn" onClick={() => openPopup(ev)}>Register</button>
-                    )}
+  <button
+    className="cal-reg-btn"
+    onClick={() => openPopup(ev)}
+    disabled={ev.registeredCount >= ev.capacity}
+  >
+    {ev.registeredCount >= ev.capacity ? '❌ Full' : 'Register'}
+  </button>
+)}
                   </div>
                 );
               })}

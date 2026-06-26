@@ -17,6 +17,13 @@ const auth = (req, res, next) => {
   }
 };
 
+const adminOnly = (req, res, next) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+  next();
+};
+
 const sendConfirmationEmail = async (studentEmail, studentName, department, year, whatsapp, subEvent, eventTitle, eventDate, eventLocation) => {
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
@@ -71,10 +78,6 @@ const sendConfirmationEmail = async (studentEmail, studentName, department, year
     </div>
   `;
 
-  // NOTE: Resend free tier only allows sending to the account owner's
-  // verified email address until a sending domain is verified at
-  // resend.com/domains. For this project, registration confirmations
-  // will only be delivered when studentEmail matches the verified address.
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -100,7 +103,6 @@ router.post('/:eventId', auth, async (req, res) => {
   try {
     const { name, department, year, whatsapp, subEvent } = req.body;
 
-    // Basic input validation
     if (!name || !department || !year || !whatsapp) {
       return res.status(400).json({ message: 'Name, department, year, and WhatsApp number are required' });
     }
@@ -135,13 +137,9 @@ router.post('/:eventId', auth, async (req, res) => {
     event.registeredCount += 1;
     await event.save();
 
-    // Email sending is wrapped separately so a failed email
-    // never blocks a successful registration
     try {
       const student = await User.findById(req.user.userId);
-      if (!student || !student.email) {
-        throw new Error('Student record or email not found');
-      }
+      if (!student || !student.email) throw new Error('Student record or email not found');
       await sendConfirmationEmail(
         student.email, name, department, year, whatsapp,
         subEvent, event.title, event.date, event.location
@@ -163,6 +161,40 @@ router.get('/event/:eventId', auth, async (req, res) => {
   try {
     const registrations = await Registration.find({ event: req.params.eventId });
     res.json(registrations);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Export attendee list as CSV (admin/organizer only)
+router.get('/event/:eventId/export-csv', auth, adminOnly, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    const registrations = await Registration.find({ event: req.params.eventId });
+
+    const rows = [
+      ['Name', 'Department', 'Year', 'WhatsApp', 'Sub-Event', 'Registered At'],
+      ...registrations.map(r => [
+        r.name,
+        r.department,
+        r.year,
+        r.whatsapp,
+        r.subEvent || '-',
+        new Date(r.createdAt).toLocaleString()
+      ])
+    ];
+
+    const csv = rows.map(row =>
+      row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+
+    const filename = `${event.title.replace(/[^a-z0-9]/gi, '_')}_attendees.csv`;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

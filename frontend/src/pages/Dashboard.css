@@ -93,3 +93,13 @@
 .dash-student-data:hover { background: #f8faff; }
 .dash-cancel-btn { width: 100%; padding: 12px; background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
 .dash-cancel-btn:hover { background: #ffcdd2; }
+.dash-export-btn {
+  background: #2e7d32;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.dash-export-btn:hover { background: #1b5e20; }
