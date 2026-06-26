@@ -1,88 +1,118 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
+const Event = require('../models/Event');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 
-const ADMIN_EMAIL = 'yonaah.321@gmail.com';
-const COLLEGE_DOMAIN = '@kongunaducollege.ac.in';
-
-// Register
-router.post('/register', async (req, res) => {
+const auth = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ message: 'No token provided' });
   try {
-    const { name, email, password } = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).json({ message: 'Invalid token' });
+  }
+};
 
-    // Determine role based on email
-    let role;
-    if (email === ADMIN_EMAIL) {
-      role = 'admin';
-    } else if (email.endsWith(COLLEGE_DOMAIN)) {
-      role = 'student';
-    } else {
-      return res.status(400).json({ message: 'Registration is only allowed for Kongu Nadu College students. Please use your college email.' });
-    }
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'event-posters',
+    allowed_formats: ['jpg', 'png', 'jpeg'],
+  },
+});
+const upload = multer({ storage });
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({ name, email, password: hashedPassword, role });
-    await user.save();
-
-    res.status(201).json({ message: 'Registration successful! You can now log in.' });
+// Get all events
+router.get('/', async (req, res) => {
+  try {
+    const events = await Event.find().populate('organizer', 'name email');
+    res.json(events);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-
-// Verify Email
-router.get('/verify-email/:token', async (req, res) => {
+// Create event
+router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
-    const { token } = req.params;
+    if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    const { title, description, date, startTime, endTime, location, capacity, category, subEvents } = req.body;
+    const image = req.file ? req.file.path : '';
+    const event = new Event({
+      title, description, date, startTime, endTime, location, capacity,
+      category: category || 'Technical',
+      subEvents: subEvents ? JSON.parse(subEvents) : [],
+      image,
+      organizer: req.user.userId
+    });
+    await event.save();
 
-    const user = await User.findOne({ verificationToken: token });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired verification link' });
+    // Notify all registered users
+    try {
+      const users = await User.find({}, 'email name');
+      for (const user of users) {
+        await sendEmail(
+          user.email,
+          `New Event: ${title}`,
+          `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
+            <h2 style="background:#1a73e8;color:white;padding:20px;border-radius:8px 8px 0 0;margin:0;">
+              New Event Posted!
+            </h2>
+            <div style="padding:24px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;">
+              <p>Hi ${user.name},</p>
+              <h3 style="color:#1a73e8;">${title}</h3>
+              <p>${description}</p>
+              <p><strong>Date:</strong> ${new Date(date).toDateString()}</p>
+              <p><strong>Location:</strong> ${location}</p>
+              <p><strong>Capacity:</strong> ${capacity} seats</p>
+              <a href="https://event-management-system-pied-beta.vercel.app/events"
+                style="background:#1a73e8;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;margin-top:12px;">
+                View & Register
+              </a>
+            </div>
+          </div>
+          `
+        );
+      }
+      console.log(`Notification sent to ${users.length} users`);
+    } catch (emailErr) {
+      console.error('Notification email error:', emailErr.message);
     }
 
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    await user.save();
-
-    res.json({ message: 'Email verified successfully! You can now log in.' });
+    res.status(201).json({ message: 'Event created successfully', event });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Login
-router.post('/login', async (req, res) => {
+// Update event
+router.put('/:id', auth, upload.single('image'), async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const updates = { ...req.body };
+    if (req.file) updates.image = req.file.path;
+    if (updates.subEvents) updates.subEvents = JSON.parse(updates.subEvents);
+    const event = await Event.findByIdAndUpdate(req.params.id, updates, { returnDocument: 'after' });
+    res.json({ message: 'Event updated successfully', event });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid email or password' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid email or password' });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.json({ token, role: user.role, name: user.name });
+// Delete event
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    await Event.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Event deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
