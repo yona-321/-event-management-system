@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
 
 function Login() {
@@ -19,7 +19,13 @@ function Login() {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('role', res.data.role);
       localStorage.setItem('name', res.data.name);
-      navigate('/events');
+
+      // Redirect based on role
+      if (res.data.role === 'admin' || res.data.role === 'organizer') {
+        navigate('/dashboard');
+      } else {
+        navigate('/events');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     }
@@ -73,8 +79,7 @@ function Login() {
 
             <button className="auth-button" type="submit">Login</button>
           </form>
-
-          <p className="auth-link">Don't have an account? <Link to="/register">Register</Link></p>
+          {/* Register link removed — accounts are managed by admin */}
         </div>
       </div>
     </div>
