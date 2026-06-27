@@ -4,10 +4,27 @@ import './Analytics.css';
 
 const API = 'https://event-management-system-c0bz.onrender.com';
 
+const categoryColors = {
+  Technical: '#58a6ff',
+  'Non-Technical': '#e3b341',
+  Sports: '#3fb950',
+  Cultural: '#d2a8ff',
+  Other: '#8b949e'
+};
+
+const categoryIcons = {
+  Technical: '💻',
+  'Non-Technical': '🎨',
+  Sports: '⚽',
+  Cultural: '🎵',
+  Other: '🎯'
+};
+
 function Analytics() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [openCategory, setOpenCategory] = useState(null);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
@@ -32,17 +49,12 @@ function Analytics() {
     }
   };
 
-  const categoryColors = {
-    Technical: '#1a73e8',
-    'Non-Technical': '#e91e63',
-    Sports: '#4caf50',
-    Cultural: '#ff9800',
-    Other: '#9c27b0'
+  const toggleCategory = (cat) => {
+    setOpenCategory(openCategory === cat ? null : cat);
   };
 
   return (
     <div className="analytics-page">
-      {/* Navbar */}
       <div className="analytics-nav">
         <h2 className="analytics-logo">🎓 Event Management System</h2>
         <div className="analytics-nav-right">
@@ -91,46 +103,67 @@ function Analytics() {
                 <h3>🏆 Most Popular Event</h3>
                 <div className="popular-event">
                   <div className="popular-title">{stats.mostPopular.title}</div>
-                  <div className="popular-meta">
-                    {stats.mostPopular.registeredCount} / {stats.mostPopular.capacity} registered
-                  </div>
+                  <div className="popular-meta">{stats.mostPopular.registeredCount} / {stats.mostPopular.capacity} registered</div>
                   <div className="popular-bar">
-                    <div
-                      className="popular-fill"
-                      style={{ width: `${Math.min((stats.mostPopular.registeredCount / stats.mostPopular.capacity) * 100, 100)}%` }}
-                    />
+                    <div className="popular-fill" style={{ width: `${Math.min((stats.mostPopular.registeredCount / stats.mostPopular.capacity) * 100, 100)}%` }} />
                   </div>
-                  <div className="popular-pct">
-                    {((stats.mostPopular.registeredCount / stats.mostPopular.capacity) * 100).toFixed(1)}% full
-                  </div>
+                  <div className="popular-pct">{((stats.mostPopular.registeredCount / stats.mostPopular.capacity) * 100).toFixed(1)}% full</div>
                 </div>
               </div>
             )}
 
-            {/* By Category */}
+            {/* Events by Category — clickable */}
             <div className="analytics-card">
               <h3>📂 Events by Category</h3>
               <div className="category-list">
-                {Object.entries(stats.byCategory).map(([cat, data]) => (
-                  <div key={cat} className="category-row">
-                    <div className="category-name">
-                      <span className="cat-dot" style={{ background: categoryColors[cat] || '#666' }} />
-                      {cat}
-                    </div>
-                    <div className="category-bar-wrap">
-                      <div className="category-bar">
-                        <div
-                          className="category-fill"
-                          style={{
-                            width: `${(data.count / stats.totalEvents) * 100}%`,
-                            background: categoryColors[cat] || '#666'
-                          }}
-                        />
+                {Object.entries(stats.byCategory).map(([cat, data]) => {
+                  const color = categoryColors[cat] || '#8b949e';
+                  const icon = categoryIcons[cat] || '🎯';
+                  const isOpen = openCategory === cat;
+                  const catEvents = stats.recentEvents.filter(e => e.category === cat);
+
+                  return (
+                    <div key={cat} className="cat-block">
+                      <div className="cat-header" onClick={() => toggleCategory(cat)}>
+                        <span className="cat-icon">{icon}</span>
+                        <span className="cat-name">{cat}</span>
+                        <div className="cat-bar-wrap">
+                          <div className="cat-bar-bg">
+                            <div className="cat-bar-fill" style={{
+                              width: `${(data.count / stats.totalEvents) * 100}%`,
+                              background: color
+                            }} />
+                          </div>
+                        </div>
+                        <span className="cat-count">{data.count} events · {data.registrations} registrations</span>
+                        <span className="cat-arrow" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
                       </div>
+
+                      {isOpen && (
+                        <div className="cat-events">
+                          {catEvents.length === 0 ? (
+                            <p className="cat-no-ev">No event details available</p>
+                          ) : (
+                            catEvents.map((ev, i) => (
+                              <div key={i} className="cat-ev-row">
+                                <span className="cat-ev-title">{icon} {ev.title}</span>
+                                <div className="cat-mini-bar-bg">
+                                  <div className="cat-mini-fill" style={{
+                                    width: `${Math.min((ev.registeredCount / ev.capacity) * 100, 100)}%`,
+                                    background: color
+                                  }} />
+                                </div>
+                                <span className="cat-ev-reg" style={{ color }}>
+                                  {ev.registeredCount}/{ev.capacity} · {((ev.registeredCount / ev.capacity) * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="category-stats">{data.count} events · {data.registrations} registrations</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -156,10 +189,7 @@ function Analytics() {
                     <span>{new Date(ev.date).toDateString()}</span>
                     <span>
                       <div className="mini-bar">
-                        <div
-                          className="mini-fill"
-                          style={{ width: `${Math.min((ev.registeredCount / ev.capacity) * 100, 100)}%` }}
-                        />
+                        <div className="mini-fill" style={{ width: `${Math.min((ev.registeredCount / ev.capacity) * 100, 100)}%` }} />
                       </div>
                       {((ev.registeredCount / ev.capacity) * 100).toFixed(0)}%
                     </span>

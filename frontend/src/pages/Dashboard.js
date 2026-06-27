@@ -206,7 +206,6 @@ function Dashboard() {
     }
   };
 
-  // CSV Export — triggers browser download directly
   const handleExportCSV = async (eventId, eventTitle) => {
     try {
       const res = await fetch(`${API}/api/registrations/event/${eventId}/export-csv`, {
@@ -245,6 +244,7 @@ function Dashboard() {
         <div className="dash-nav-right">
           <span className="dash-welcome">👤 Welcome, {userName}!</span>
           <button className="dash-view-btn" onClick={() => navigate('/events')}>View Events</button>
+          <button className="dash-view-btn" onClick={() => navigate('/analytics')}>📊 Analytics</button>
           <button className="dash-logout-btn" onClick={() => { localStorage.clear(); navigate('/login'); }}>Logout</button>
         </div>
       </div>
@@ -372,16 +372,8 @@ function Dashboard() {
                     {event.category}
                   </span>
                   <button className="dash-edit-btn" onClick={e => { e.stopPropagation(); handleEdit(event); }}>✏️ Edit</button>
-                  <button className="dash-view-btn" onClick={() => navigate('/analytics')}>📊 Analytics</button>
                   <button className="dash-del-btn" onClick={e => { e.stopPropagation(); handleDelete(event._id); }}>🗑️ Delete</button>
-                  {/* CSV Export button */}
-                  <button
-                    className="dash-export-btn"
-                    onClick={e => { e.stopPropagation(); handleExportCSV(event._id, event.title); }}
-                    title="Export attendees as CSV"
-                  >
-                    📥 Export
-                  </button>
+                  <button className="dash-export-btn" onClick={e => { e.stopPropagation(); handleExportCSV(event._id, event.title); }}>📥 Export</button>
                   <span className="dash-arrow">{expandedEvent === event._id ? '▲' : '▼'}</span>
                 </div>
               </div>
