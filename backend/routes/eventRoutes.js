@@ -41,7 +41,15 @@ router.get('/', async (req, res) => {
 });
 
 // Create event
-router.post('/', auth, upload.single('image'), async (req, res) => {
+router.post('/', auth, (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      console.error('❌ Multer/Cloudinary upload error:', err.message, err.stack);
+      return res.status(500).json({ message: 'Image upload failed', error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
@@ -99,7 +107,15 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
 });
 
 // Update event
-router.put('/:id', auth, upload.single('image'), async (req, res) => {
+router.put('/:id', auth, (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      console.error('❌ Multer/Cloudinary upload error:', err.message, err.stack);
+      return res.status(500).json({ message: 'Image upload failed', error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const updates = { ...req.body };
     if (req.file) updates.image = req.file.path;
