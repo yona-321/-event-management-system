@@ -22,10 +22,10 @@ const auth = (req, res, next) => {
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'event-posters',
-    allowed_formats: ['jpg', 'png', 'jpeg'],
-  },
+ params: {
+  folder: 'event-posters',
+  allowed_formats: ['jpg', 'png', 'jpeg', 'avif', 'webp'],
+},
 });
 const upload = multer({ storage });
 
