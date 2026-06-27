@@ -85,7 +85,7 @@ const sendConfirmationEmail = async (studentEmail, studentName, department, year
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      from: 'Event Management System <onboarding@resend.dev>',
+      from: 'Event Management System <noreply@rojaevent.dev>',
       to: studentEmail,
       subject: `✅ Registration Confirmed – ${eventTitle}`,
       html: htmlContent
@@ -174,17 +174,12 @@ router.get('/event/:eventId/export-csv', auth, adminOnly, async (req, res) => {
 
     const registrations = await Registration.find({ event: req.params.eventId });
 
-    // Column widths via padding — pad each field to fixed width for readability
-    const pad = (str, len) => String(str).padEnd(len, ' ');
-
     const rows = [
-      // Header row
       ['Name', 'Department', 'Year', 'WhatsApp', 'Sub-Event', 'Registered At'],
       ...registrations.map(r => [
         r.name,
         r.department,
         r.year,
-        // Prefix with tab character so Excel treats as text, not scientific notation
         '\t' + r.whatsapp,
         r.subEvent || '-',
         new Date(r.createdAt).toLocaleString('en-IN', {
