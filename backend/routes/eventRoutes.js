@@ -35,6 +35,7 @@ router.get('/', async (req, res) => {
     const events = await Event.find().populate('organizer', 'name email');
     res.json(events);
   } catch (error) {
+    console.error('Get events error:', error.message, error.stack);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -55,6 +56,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       organizer: req.user.userId
     });
     await event.save();
+    console.log('✅ Event saved:', event.title);
 
     // Notify all registered users
     try {
@@ -84,13 +86,14 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
           `
         );
       }
-      console.log(`Notification sent to ${users.length} users`);
+      console.log(`✅ Notification sent to ${users.length} users`);
     } catch (emailErr) {
-      console.error('Notification email error:', emailErr.message);
+      console.error('❌ Notification email error:', emailErr.message, emailErr.stack);
     }
 
     res.status(201).json({ message: 'Event created successfully', event });
   } catch (error) {
+    console.error('❌ Event creation error:', error.message, error.stack);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -102,8 +105,10 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     if (req.file) updates.image = req.file.path;
     if (updates.subEvents) updates.subEvents = JSON.parse(updates.subEvents);
     const event = await Event.findByIdAndUpdate(req.params.id, updates, { returnDocument: 'after' });
+    console.log('✅ Event updated:', req.params.id);
     res.json({ message: 'Event updated successfully', event });
   } catch (error) {
+    console.error('❌ Update event error:', error.message, error.stack);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -112,8 +117,10 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
   try {
     await Event.findByIdAndDelete(req.params.id);
+    console.log('✅ Event deleted:', req.params.id);
     res.json({ message: 'Event deleted successfully' });
   } catch (error) {
+    console.error('❌ Delete event error:', error.message, error.stack);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
