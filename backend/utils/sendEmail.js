@@ -1,22 +1,25 @@
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-
 const sendEmail = async (to, subject, html) => {
   try {
-    await transporter.sendMail({
-      from: `"Event Management System" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'Event Management System <noreply@rojaevent.dev>',
+        to,
+        subject,
+        html
+      })
     });
-    console.log('Email sent to', to);
+
+    if (!response.ok) {
+      const err = await response.json();
+      console.error('Email sending failed:', err.message);
+    } else {
+      console.log('Email sent to', to);
+    }
   } catch (error) {
     console.error('Email sending failed:', error.message);
   }
