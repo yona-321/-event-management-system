@@ -7,7 +7,7 @@ const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 
 const ADMIN_EMAILS = ['yonaah.321@gmail.com', 'kroja.0489@gmail.com'];
-const COLLEGE_DOMAIN = '@kongunaducollege.ac.in';
+const COLLEGE_DOMAIN = '.ac.in';
 
 // Register
 router.post('/register', async (req, res) => {
@@ -21,7 +21,7 @@ router.post('/register', async (req, res) => {
     } else if (email.endsWith(COLLEGE_DOMAIN)) {
       role = 'student';
     } else {
-      return res.status(400).json({ message: 'Registration is only allowed for Kongu Nadu College students. Please use your college email.' });
+      return res.status(400).json({ message: 'Registration is only allowed for college students. Please use your college email.' });
     }
 
     const existingUser = await User.findOne({ email });
@@ -39,7 +39,6 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
-
 
 // Verify Email
 router.get('/verify-email/:token', async (req, res) => {
