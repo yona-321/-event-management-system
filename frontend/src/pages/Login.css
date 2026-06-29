@@ -52,6 +52,16 @@
   margin-bottom: 16px;
 }
 
+.login-success {
+  background: #1a2e1a;
+  border: 1px solid #238636;
+  border-radius: 8px;
+  color: #3fb950;
+  font-size: 13px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+}
+
 .login-field {
   margin-bottom: 18px;
 }
@@ -121,6 +131,27 @@
 
 .login-btn:hover {
   background: #2ea043;
+}
+
+.login-toggle {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+  color: #8b949e;
+}
+
+.login-toggle-btn {
+  background: none;
+  border: none;
+  color: #58a6ff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.login-toggle-btn:hover {
+  text-decoration: underline;
 }
 
 /* ── Dark theme global variables (used by Events, Dashboard, Analytics) ── */
