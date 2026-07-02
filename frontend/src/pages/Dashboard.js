@@ -6,6 +6,7 @@ import './Dashboard.css';
 const API = 'https://event-management-system-c0bz.onrender.com';
 
 function Dashboard() {
+  const [activeView, setActiveView] = useState('events'); // 'events' | 'create'
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
@@ -140,7 +141,7 @@ function Dashboard() {
     setSubEvents(event.subEvents || []);
     setImagePreview(event.image || '');
     setImage(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setActiveView('create');
     setMessage('✏️ Editing event — make your changes and click Update Event.');
   };
 
@@ -152,6 +153,7 @@ function Dashboard() {
     setLocation(''); setCapacity(''); setSubEvents([]);
     setImage(null); setImagePreview('');
     setMessage('');
+    setActiveView('events');
   };
 
   const handleCreateEvent = async (e) => {
@@ -188,6 +190,7 @@ function Dashboard() {
       setLocation(''); setCapacity(''); setSubEvents([]);
       setImage(null); setImagePreview('');
       fetchEvents();
+      setActiveView('events');
     } catch (err) {
       setMessage(err.response?.data?.message || 'Failed to save event');
     }
@@ -238,208 +241,240 @@ function Dashboard() {
   };
 
   return (
-    <div className="dash-page">
-      <div className="dash-nav">
-        <h2 className="dash-logo">🎓 Organizer Dashboard</h2>
-        <div className="dash-nav-right">
-          <span className="dash-welcome">👤 Welcome, {userName}!</span>
-          <button className="dash-view-btn" onClick={() => navigate('/events')}>View Events</button>
-          <button className="dash-view-btn" onClick={() => navigate('/analytics')}>📊 Analytics</button>
-          <button className="dash-logout-btn" onClick={() => { localStorage.clear(); navigate('/login'); }}>Logout</button>
-        </div>
+    <div className="dash-shell">
+      {/* SIDEBAR */}
+      <div className="dash-sidebar">
+        <div className="sb-logo">🎓 Organizer</div>
+        <div className="sb-welcome">👤 {userName}</div>
+
+        <button
+          className={`sb-item ${activeView === 'events' ? 'sb-active' : ''}`}
+          onClick={() => setActiveView('events')}
+        >
+          📋 All Events
+        </button>
+        <button
+          className={`sb-item ${activeView === 'create' ? 'sb-active' : ''}`}
+          onClick={() => { if (!editMode) handleCancelEditFieldsOnly(); setActiveView('create'); }}
+        >
+          ➕ Create Event
+        </button>
+        <button className="sb-item" onClick={() => navigate('/events')}>
+          🎫 View Events Page
+        </button>
+        <button className="sb-item" onClick={() => navigate('/analytics')}>
+          📊 Analytics
+        </button>
+
+        <div className="sb-spacer" />
+        <button className="sb-item sb-logout" onClick={() => { localStorage.clear(); navigate('/login'); }}>
+          🚪 Logout
+        </button>
       </div>
 
-      <div className="dash-content">
-        <div className="dash-form-card">
-          <h3 className="dash-card-title">{editMode ? '✏️ Edit Event' : '➕ Create New Event'}</h3>
-          {message && <div className="dash-message">{message}</div>}
-          <form onSubmit={handleCreateEvent}>
-            <div className="img-upload-box" onClick={() => document.getElementById('imgInput').click()}>
-              {imagePreview ? (
-                <img src={imagePreview} alt="preview" className="img-preview" />
-              ) : (
-                <>
-                  <span className="img-icon">🖼️</span>
-                  <p>Click to upload event poster / banner</p>
-                  <p className="img-hint">JPG, PNG supported</p>
-                </>
-              )}
-            </div>
-            <input id="imgInput" type="file" accept="image/*" style={{display:'none'}} onChange={handleImageChange} />
+      {/* MAIN CONTENT */}
+      <div className="dash-main">
+        {message && <div className="dash-message">{message}</div>}
 
-            <div className="dash-field">
-              <label>EVENT TITLE</label>
-              <input type="text" placeholder="e.g. Technical Fest 2026" value={title} onChange={e => setTitle(e.target.value)} required />
-            </div>
+        {activeView === 'create' && (
+          <div className="dash-form-card">
+            <h3 className="dash-card-title">{editMode ? '✏️ Edit Event' : '➕ Create New Event'}</h3>
+            <form onSubmit={handleCreateEvent}>
+              <div className="img-upload-box" onClick={() => document.getElementById('imgInput').click()}>
+                {imagePreview ? (
+                  <img src={imagePreview} alt="preview" className="img-preview" />
+                ) : (
+                  <>
+                    <span className="img-icon">🖼️</span>
+                    <p>Click to upload event poster / banner</p>
+                    <p className="img-hint">JPG, PNG supported</p>
+                  </>
+                )}
+              </div>
+              <input id="imgInput" type="file" accept="image/*" style={{display:'none'}} onChange={handleImageChange} />
 
-            <div className="dash-field">
-              <label>CATEGORY</label>
-              <select value={category} onChange={e => setCategory(e.target.value)}>
-                <option>Technical</option>
-                <option>Non-Technical</option>
-                <option>Sports</option>
-                <option>Cultural</option>
-              </select>
-            </div>
-
-            <div className="dash-field">
-              <label>DESCRIPTION</label>
-              <textarea placeholder="Describe your event..." value={description} onChange={e => setDescription(e.target.value)} required />
-            </div>
-
-            <div className="dash-row2">
               <div className="dash-field">
-                <label>DATE</label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} required />
+                <label>EVENT TITLE</label>
+                <input type="text" placeholder="e.g. Technical Fest 2026" value={title} onChange={e => setTitle(e.target.value)} required />
               </div>
+
               <div className="dash-field">
-                <label>CAPACITY</label>
-                <input type="number" placeholder="e.g. 200" value={capacity} onChange={e => setCapacity(e.target.value)} required />
+                <label>CATEGORY</label>
+                <select value={category} onChange={e => setCategory(e.target.value)}>
+                  <option>Technical</option>
+                  <option>Non-Technical</option>
+                  <option>Sports</option>
+                  <option>Cultural</option>
+                </select>
               </div>
-            </div>
 
-            <div className="dash-row2">
               <div className="dash-field">
-                <label>START TIME</label>
-                {renderTimePicker(startTime, setStartTime)}
+                <label>DESCRIPTION</label>
+                <textarea placeholder="Describe your event..." value={description} onChange={e => setDescription(e.target.value)} required />
               </div>
+
+              <div className="dash-row2">
+                <div className="dash-field">
+                  <label>DATE</label>
+                  <input type="date" value={date} onChange={e => setDate(e.target.value)} required />
+                </div>
+                <div className="dash-field">
+                  <label>CAPACITY</label>
+                  <input type="number" placeholder="e.g. 200" value={capacity} onChange={e => setCapacity(e.target.value)} required />
+                </div>
+              </div>
+
+              <div className="dash-row2">
+                <div className="dash-field">
+                  <label>START TIME</label>
+                  {renderTimePicker(startTime, setStartTime)}
+                </div>
+                <div className="dash-field">
+                  <label>END TIME</label>
+                  {renderTimePicker(endTime, setEndTime)}
+                </div>
+              </div>
+
               <div className="dash-field">
-                <label>END TIME</label>
-                {renderTimePicker(endTime, setEndTime)}
+                <label>LOCATION</label>
+                <input type="text" placeholder="e.g. Main Auditorium" value={location} onChange={e => setLocation(e.target.value)} required />
               </div>
-            </div>
 
-            <div className="dash-field">
-              <label>LOCATION</label>
-              <input type="text" placeholder="e.g. Main Auditorium" value={location} onChange={e => setLocation(e.target.value)} required />
-            </div>
-
-            <div className="sub-events-box">
-              <label>SUB-EVENTS / COMPETITIONS</label>
-              <div className="sub-tags">
-                {subEvents.map((se, i) => (
-                  <span key={i} className="sub-tag">
-                    {se} <button type="button" onClick={() => removeSubEvent(i)}>×</button>
-                  </span>
-                ))}
+              <div className="sub-events-box">
+                <label>SUB-EVENTS / COMPETITIONS</label>
+                <div className="sub-tags">
+                  {subEvents.map((se, i) => (
+                    <span key={i} className="sub-tag">
+                      {se} <button type="button" onClick={() => removeSubEvent(i)}>×</button>
+                    </span>
+                  ))}
+                </div>
+                <div className="sub-add">
+                  <input type="text" placeholder="e.g. Web App, Drawing, Quiz" value={subInput}
+                    onChange={e => setSubInput(e.target.value)}
+                    onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addSubEvent())} />
+                  <button type="button" onClick={addSubEvent}>+ Add</button>
+                </div>
               </div>
-              <div className="sub-add">
-                <input type="text" placeholder="e.g. Web App, Drawing, Quiz" value={subInput}
-                  onChange={e => setSubInput(e.target.value)}
-                  onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addSubEvent())} />
-                <button type="button" onClick={addSubEvent}>+ Add</button>
-              </div>
-            </div>
 
-            <button type="submit" className="dash-create-btn">
-              {editMode ? '✅ Update Event' : '✅ Create Event'}
-            </button>
-            {editMode && (
-              <button type="button" className="dash-cancel-btn" onClick={handleCancelEdit}>
-                ❌ Cancel Edit
+              <button type="submit" className="dash-create-btn">
+                {editMode ? '✅ Update Event' : '✅ Create Event'}
               </button>
-            )}
-          </form>
-        </div>
-
-        {/* RIGHT - All Events */}
-        <div className="dash-events-card">
-          <div className="dash-events-header">
-            <h3 className="dash-card-title">📋 All Events</h3>
-            <span className="dash-ev-count">{events.length} Events</span>
-          </div>
-          {events.length === 0 && <p className="dash-no-events">No events created yet.</p>}
-          {events.map(event => (
-            <div key={event._id} className="dash-ev-item">
-              <div className="dash-ev-header" onClick={() => handleToggleEvent(event._id)}>
-                <div className="dash-ev-left">
-                  <h4>{getCategoryIcon(event.category)} {event.title}</h4>
-                  <p>
-                    📅 {new Date(event.date).toDateString()}
-                    {event.startTime ? ` ⏰ ${formatTime(event.startTime)}${event.endTime ? ` - ${formatTime(event.endTime)}` : ''}` : ''}
-                    &nbsp; 📍 {event.location} &nbsp; 👥 {event.registeredCount}/{event.capacity}
-                  </p>
-                  {event.subEvents && event.subEvents.length > 0 && (
-                    <div className="dash-sub-tags-view">
-                      {event.subEvents.map((se, i) => (
-                        <span key={i} className="dash-sub-badge">{se}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="dash-ev-right">
-                  <span className={`dash-cat-badge ${event.category === 'Technical' ? 'badge-tech' : event.category === 'Sports' ? 'badge-sports' : event.category === 'Cultural' ? 'badge-cultural' : 'badge-ntech'}`}>
-                    {event.category}
-                  </span>
-                  <button className="dash-edit-btn" onClick={e => { e.stopPropagation(); handleEdit(event); }}>✏️ Edit</button>
-                  <button className="dash-del-btn" onClick={e => { e.stopPropagation(); handleDelete(event._id); }}>🗑️ Delete</button>
-                  <button className="dash-export-btn" onClick={e => { e.stopPropagation(); handleExportCSV(event._id, event.title); }}>📥 Export</button>
-                  <span className="dash-arrow">{expandedEvent === event._id ? '▲' : '▼'}</span>
-                </div>
-              </div>
-
-              <div className="dash-cap-bar">
-                <div className="dash-cap-fill" style={{ width: `${Math.min((event.registeredCount / event.capacity) * 100, 100)}%` }} />
-              </div>
-
-              {expandedEvent === event._id && (
-                <div className="dash-registrations">
-                  {event.subEvents && event.subEvents.length > 0 ? (
-                    event.subEvents.map((se, i) => {
-                      const regs = getSubEventRegistrations(event._id, se);
-                      return (
-                        <div key={i} className="dash-sub-section">
-                          <div className="dash-sub-title">
-                            <span>🏆 {se}</span>
-                            <span>{regs.length} registered</span>
-                          </div>
-                          {regs.length === 0 ? (
-                            <p className="dash-no-reg">No registrations yet</p>
-                          ) : (
-                            <div className="dash-student-table">
-                              <div className="dash-student-row dash-student-header">
-                                <span>Name</span><span>Department</span><span>Year</span><span>WhatsApp</span>
-                              </div>
-                              {regs.map((r, j) => (
-                                <div key={j} className="dash-student-row dash-student-data">
-                                  <span>{r.name}</span><span>{r.department}</span><span>{r.year}</span><span>{r.whatsapp}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="dash-sub-section">
-                      <div className="dash-sub-title">
-                        <span>👥 All Registrations</span>
-                        <span>{(eventRegistrations[event._id] || []).length} registered</span>
-                      </div>
-                      {(eventRegistrations[event._id] || []).length === 0 ? (
-                        <p className="dash-no-reg">No registrations yet</p>
-                      ) : (
-                        <div className="dash-student-table">
-                          <div className="dash-student-row dash-student-header">
-                            <span>Name</span><span>Department</span><span>Year</span><span>WhatsApp</span>
-                          </div>
-                          {(eventRegistrations[event._id] || []).map((r, j) => (
-                            <div key={j} className="dash-student-row dash-student-data">
-                              <span>{r.name}</span><span>{r.department}</span><span>{r.year}</span><span>{r.whatsapp}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+              {editMode && (
+                <button type="button" className="dash-cancel-btn" onClick={handleCancelEdit}>
+                  ❌ Cancel Edit
+                </button>
               )}
+            </form>
+          </div>
+        )}
+
+        {activeView === 'events' && (
+          <div className="dash-events-card">
+            <div className="dash-events-header">
+              <h3 className="dash-card-title">📋 All Events</h3>
+              <span className="dash-ev-count">{events.length} Events</span>
             </div>
-          ))}
-        </div>
+            {events.length === 0 && <p className="dash-no-events">No events created yet.</p>}
+            {events.map(event => (
+              <div key={event._id} className="dash-ev-item">
+                <div className="dash-ev-header" onClick={() => handleToggleEvent(event._id)}>
+                  <div className="dash-ev-left">
+                    <h4>{getCategoryIcon(event.category)} {event.title}</h4>
+                    <p>
+                      📅 {new Date(event.date).toDateString()}
+                      {event.startTime ? ` ⏰ ${formatTime(event.startTime)}${event.endTime ? ` - ${formatTime(event.endTime)}` : ''}` : ''}
+                      &nbsp; 📍 {event.location} &nbsp; 👥 {event.registeredCount}/{event.capacity}
+                    </p>
+                    {event.subEvents && event.subEvents.length > 0 && (
+                      <div className="dash-sub-tags-view">
+                        {event.subEvents.map((se, i) => (
+                          <span key={i} className="dash-sub-badge">{se}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="dash-ev-right">
+                    <span className={`dash-cat-badge ${event.category === 'Technical' ? 'badge-tech' : event.category === 'Sports' ? 'badge-sports' : event.category === 'Cultural' ? 'badge-cultural' : 'badge-ntech'}`}>
+                      {event.category}
+                    </span>
+                    <button className="dash-edit-btn" onClick={e => { e.stopPropagation(); handleEdit(event); }}>✏️ Edit</button>
+                    <button className="dash-del-btn" onClick={e => { e.stopPropagation(); handleDelete(event._id); }}>🗑️ Delete</button>
+                    <button className="dash-export-btn" onClick={e => { e.stopPropagation(); handleExportCSV(event._id, event.title); }}>📥 Export</button>
+                    <span className="dash-arrow">{expandedEvent === event._id ? '▲' : '▼'}</span>
+                  </div>
+                </div>
+
+                <div className="dash-cap-bar">
+                  <div className="dash-cap-fill" style={{ width: `${Math.min((event.registeredCount / event.capacity) * 100, 100)}%` }} />
+                </div>
+
+                {expandedEvent === event._id && (
+                  <div className="dash-registrations">
+                    {event.subEvents && event.subEvents.length > 0 ? (
+                      event.subEvents.map((se, i) => {
+                        const regs = getSubEventRegistrations(event._id, se);
+                        return (
+                          <div key={i} className="dash-sub-section">
+                            <div className="dash-sub-title">
+                              <span>🏆 {se}</span>
+                              <span>{regs.length} registered</span>
+                            </div>
+                            {regs.length === 0 ? (
+                              <p className="dash-no-reg">No registrations yet</p>
+                            ) : (
+                              <div className="dash-student-table">
+                                <div className="dash-student-row dash-student-header">
+                                  <span>Name</span><span>Department</span><span>Year</span><span>WhatsApp</span>
+                                </div>
+                                {regs.map((r, j) => (
+                                  <div key={j} className="dash-student-row dash-student-data">
+                                    <span>{r.name}</span><span>{r.department}</span><span>{r.year}</span><span>{r.whatsapp}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="dash-sub-section">
+                        <div className="dash-sub-title">
+                          <span>👥 All Registrations</span>
+                          <span>{(eventRegistrations[event._id] || []).length} registered</span>
+                        </div>
+                        {(eventRegistrations[event._id] || []).length === 0 ? (
+                          <p className="dash-no-reg">No registrations yet</p>
+                        ) : (
+                          <div className="dash-student-table">
+                            <div className="dash-student-row dash-student-header">
+                              <span>Name</span><span>Department</span><span>Year</span><span>WhatsApp</span>
+                            </div>
+                            {(eventRegistrations[event._id] || []).map((r, j) => (
+                              <div key={j} className="dash-student-row dash-student-data">
+                                <span>{r.name}</span><span>{r.department}</span><span>{r.year}</span><span>{r.whatsapp}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
+
+  function handleCancelEditFieldsOnly() {
+    setTitle(''); setDescription(''); setDate('');
+    setStartTime(''); setEndTime('');
+    setLocation(''); setCapacity(''); setSubEvents([]);
+    setImage(null); setImagePreview('');
+  }
 }
 
 export default Dashboard;
